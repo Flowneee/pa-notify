@@ -100,12 +100,13 @@ notify_icon(gint volume)
 static void
 notify_message(NotifyNotification* notification,
                const gchar* summary,
+               const gchar* body,
                NotifyUrgency urgency,
                const gchar* icon,
                gint timeout,
                gint volume)
 {
-    notify_notification_update(notification, summary, NULL, icon);
+    notify_notification_update(notification, summary, body, icon);
     notify_notification_set_timeout(notification, timeout);
     notify_notification_set_urgency(notification, urgency);
     if (volume >= 0) {
@@ -122,6 +123,7 @@ static void
 sink_info_callback(pa_context* c, const pa_sink_info* i, int eol, void* userdata)
 {
     static gchar summery[255];
+    static gchar body[255];
     float f_volume;
     gint volume;
     Context* context = (Context*)userdata;
@@ -136,11 +138,14 @@ sink_info_callback(pa_context* c, const pa_sink_info* i, int eol, void* userdata
             f_volume *= 100.0f;
             volume = (int)ceil(f_volume);
             g_sprintf(summery, "Volume (%d%%)", volume);
+            if (i->description != NULL)
+                g_sprintf(body, "%s", i->description);
         }
 
         if (context->volume != volume) {
             notify_message(context->notification,
                            summery,
+                           body,
                            config.urgency,
                            notify_icon(volume),
                            config.timeout,
